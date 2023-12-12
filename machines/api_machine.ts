@@ -16,10 +16,21 @@ type ApiMachineContext<T> =
       error: unknown;
     };
 
+type ApiMachineEvent<P> =
+  | {
+      type: 'START';
+      params: P;
+    }
+  | {
+      type: 'REFETCH';
+      params: P;
+    };
+
 export const createApiMachine = <P, T>(fn: (params: P) => Promise<T>) =>
   createMachine({
     types: {} as {
       context: ApiMachineContext<T>;
+      evens: ApiMachineEvent<P>;
     },
     context: { status: 'idle' },
     initial: 'idle',
@@ -52,12 +63,16 @@ export const createApiMachine = <P, T>(fn: (params: P) => Promise<T>) =>
         },
       },
       resolved: {
-        type: 'final',
+        on: {
+          REFETCH: 'pending',
+        },
       },
       rejected: {
         on: {
-          RETRY: 'pending',
+          REFETCH: 'pending',
         },
       },
     },
   });
+
+export type ApiStateMachine<P, T> = ReturnType<typeof createApiMachine<P, T>>;
